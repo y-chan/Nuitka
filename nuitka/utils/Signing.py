@@ -28,18 +28,6 @@ _macos_codesign_usage = "The 'codesign' is used to remove invalidated signatures
 
 
 def removeMacOSCodeSignature(filename):
-    """Remove the code signature from a filename.
-
-    Args:
-        filename - The file to be modified.
-
-    Returns:
-        None
-
-    Notes:
-        This is macOS specific.
-    """
-
     with withMadeWritableFileMode(filename):
         executeToolChecked(
             logger=postprocessing_logger,
@@ -48,8 +36,31 @@ def removeMacOSCodeSignature(filename):
         )
 
 
-def addMacOSCodeSignature(filename, identity, entitlements_filename, deep):
-    extra_args = []
+def _filterSigntoolErrorOutput(stderr):
+    stderr = b"\n".join(
+        line
+        for line in stderr.splitlines()
+        if line
+        if b"replacing existing signature" not in line
+    )
+
+    return stderr
+
+
+def addMacOSCodeSignature(filenames, identity=None, entitlements_filename=None):
+    """Remove the code signature from a filename.
+
+    Args:
+        filenames - The files to be signed.
+        identity - Use this identity to sign, default adhoc signature.
+        entitlements_filename - Apply these entitlements in signature.
+
+    Returns:
+        None
+
+    Notes:
+        This is macOS specific.
+    """
 
     # Weak signing is supported.
     if not identity:
@@ -60,26 +71,23 @@ def addMacOSCodeSignature(filename, identity, entitlements_filename, deep):
         "-s",
         identity,
         "--force",
-        "--timestamp",
-        "--all-architectures",
     ]
 
-    # hardened runtime unless no good identify
+    # hardened runtime unless no good identity
     if identity != "-":
-        extra_args.append("--options=runtime")
+        command.append("--options=runtime")
 
     if entitlements_filename:
-        extra_args.append("--entitlements")
-        extra_args.append(entitlements_filename)
+        command.append("--entitlements")
+        command.append(entitlements_filename)
 
-    if deep:
-        extra_args.append("--deep")
+    assert type(filenames) is not str
+    command.extend(filenames)
 
-    command.append(filename)
-
-    with withMadeWritableFileMode(filename):
+    with withMadeWritableFileMode(filenames):
         executeToolChecked(
             logger=postprocessing_logger,
             command=command,
             absence_message=_macos_codesign_usage,
+            stderr_filter=_filterSigntoolErrorOutput,
         )
