@@ -68,9 +68,26 @@ def isAnacondaPython():
 
 
 def isApplePython():
-    return isMacOS() and isPathBelowOrSameAs(
-        path="/usr/bin/", filename=getSystemPrefixPath()
-    )
+    if not isMacOS():
+        return False
+
+    # Python2 on 10.15 or higher
+    if "+internal-os" in sys.version:
+        return True
+
+    # Older macOS had that
+    if isPathBelowOrSameAs(path="/usr/bin/", filename=getSystemPrefixPath()):
+        return True
+    # Newer macOS has that
+    if isPathBelowOrSameAs(
+        path="/Library/Developer/CommandLineTools/", filename=getSystemPrefixPath()
+    ):
+        return True
+
+    # Currently, Python3 on macOS from XCode is limited to that.
+    from nuitka.utils.SharedLibraries import detectBinaryMinMacOS
+
+    return detectBinaryMinMacOS(sys.executable) == "10.14"
 
 
 def isPyenvPython():
