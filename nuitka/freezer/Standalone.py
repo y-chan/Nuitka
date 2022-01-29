@@ -1155,7 +1155,9 @@ def detectUsedDLLs(source_dir, standalone_entry_points, use_cache, update_cache)
             for dll_filename in used_dlls:
                 # We want these to be absolute paths. Solve that in the parts
                 # where detectBinaryDLLs is platform specific.
-                assert os.path.isabs(dll_filename), dll_filename
+                if not os.path.isabs(dll_filename):
+                    print(dll_filename "is not abosolute path!")
+                    continue
 
                 if dll_filename not in result:
                     result[dll_filename] = []
