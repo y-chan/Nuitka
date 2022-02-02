@@ -352,14 +352,19 @@ def _setSharedLibraryRPATHDarwin(filename, rpath):
 
     with withMadeWritableFileMode(filename):
         if old_rpath is not None:
-            _removeSharedLibraryRPATHDarwin(filename=filename, rpath=old_rpath)
-
-        executeToolChecked(
-            logger=postprocessing_logger,
-            command=("install_name_tool", "-add_rpath", rpath, filename),
-            absence_message=_installnametool_usage,
-            stderr_filter=_filterInstallNameToolErrorOutput,
-        )
+            executeToolChecked(
+                logger=postprocessing_logger,
+                command=("install_name_tool", "-change", old_rpath, rpath, filename),
+                absence_message=_installnametool_usage,
+                stderr_filter=_filterInstallNameToolErrorOutput,
+            )
+        else:
+            executeToolChecked(
+                logger=postprocessing_logger,
+                command=("install_name_tool", "-add_rpath", rpath, filename),
+                absence_message=_installnametool_usage,
+                stderr_filter=_filterInstallNameToolErrorOutput,
+            )
 
 
 def removeSharedLibraryRPATH(filename):
