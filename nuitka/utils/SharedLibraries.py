@@ -418,9 +418,6 @@ def callInstallNameTool(filename, mapping, rpath):
     for old_path, new_path in mapping:
         command += ("-change", old_path, new_path)
 
-    if rpath is not None:
-        command += ("-add_rpath", os.path.join(rpath, "."))
-
     command.append(filename)
 
     with withMadeWritableFileMode(filename):
@@ -431,6 +428,12 @@ def callInstallNameTool(filename, mapping, rpath):
             stderr_filter=_filterInstallNameToolErrorOutput,
         )
 
+    if rpath is not None:
+        command = ["install_name_tool", "-add_rpath", os.path.join(rpath, "."), filename]
+        stdout, _stderr, exit_code = executeProcess(command)
+        if exit_code != 0:
+            postprocessing_logger.warning(f"{' '.join(command)}: {exit_code} {_stderr}")
+        
 
 def getPyWin32Dir():
     """Find the pywin32 DLL directory
