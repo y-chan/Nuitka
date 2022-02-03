@@ -359,12 +359,10 @@ def _setSharedLibraryRPATHDarwin(filename, rpath):
                 stderr_filter=_filterInstallNameToolErrorOutput,
             )
         else:
-            executeToolChecked(
-                logger=postprocessing_logger,
-                command=("install_name_tool", "-add_rpath", rpath, filename),
-                absence_message=_installnametool_usage,
-                stderr_filter=_filterInstallNameToolErrorOutput,
-            )
+            command = ["install_name_tool", "-add_rpath", rpath, filename]
+            stdout, _stderr, exit_code = executeProcess(command)
+            if exit_code != 0:
+                postprocessing_logger.warning(f"[_setSharedLibraryRPATHDarwin] {' '.join(command)}: {exit_code} {_stderr}")
 
 
 def removeSharedLibraryRPATH(filename):
@@ -432,7 +430,7 @@ def callInstallNameTool(filename, mapping, rpath):
         command = ["install_name_tool", "-add_rpath", os.path.join(rpath, "."), filename]
         stdout, _stderr, exit_code = executeProcess(command)
         if exit_code != 0:
-            postprocessing_logger.warning(f"{' '.join(command)}: {exit_code} {_stderr}")
+            postprocessing_logger.warning(f"[callInstallNameTool] {' '.join(command)}: {exit_code} {_stderr}")
         
 
 def getPyWin32Dir():
